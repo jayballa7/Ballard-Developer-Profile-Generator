@@ -2,25 +2,26 @@ const fs = require("fs");
 const inquirer = require("inquirer");
 const axios = require("axios");
 const pdf = require('html-pdf');
-const html = fs.readFileSync('./generateHTML.js', 'utf8');
+const generateHTML = require('./generateHTML', 'utf8');
 var options = { format: 'Letter' };
 
 
-const questions = [
-    {
-        type: "input",
-        message: "Enter your GitHub username: ",
-        name: "username"
-      },
-    {
-        type: "list",
-        mesage: "Select your preferred color: ",
-        choices: ["green", "blue", "pink", "red"],
-        name: "color"
-    }
-];
-
 function init() {
+
+    const questions = [
+        {
+            type: "input",
+            message: "Enter your GitHub username: ",
+            name: "username"
+          },
+        {
+            type: "list",
+            mesage: "Select your preferred color: ",
+            choices: ["green", "blue", "pink", "red"],
+            name: "color"
+        }
+    ];
+
     inquirer.prompt(questions)
     .then(function({username, color}) {
         const queryURL = `https://api.github.com/users/${username}`;
@@ -38,17 +39,21 @@ function init() {
             let following = response.data.following;
 
             console.log(photo, name, location, profile, blog, bio, repos, followers, following);
+
+            const html = generateHTML({color, photo, name, location, profile, blog, bio, repos, followers, following });
+           
+            pdf.create(html, options).toFile('./resume.pdf', function(err, res) {
+                if (err) return console.log(err);
+                console.log(res.filename); 
+              }); 
         }) 
-        .catch((err) => {
-            console.log("User not found");
-            process.exit(1);
-        })
+
+        //  .catch((err) => {
+        //     console.log("User not found");
+        //      process.exit(1);
+  
+        // })
     })
 }
 
 init();
-
-pdf.create(html, options).toFile('./generateHTML.pdf', function(err, res) {
-    if (err) return console.log(err);
-    console.log(res.filename); 
-  }); 
